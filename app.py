@@ -157,7 +157,7 @@ def ver_imagenes():
 application = app
 
 if __name__ == '__main__':  # Corregir el nombre de la condición para ejecutar la app
-    app.run(host='0.0.0.0', port=8081)  # Usa el puerto 8081, ya que Azure espera este puerto
+    app.run(host='0.0.0.0', port=5000)  # Usa el puerto 5000, ya que Azure espera este puerto
 
 
 
