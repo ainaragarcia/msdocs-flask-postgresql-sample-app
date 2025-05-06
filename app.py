@@ -150,6 +150,7 @@ def api_upload():
 @app.route('/imagenes', methods=['GET'])
 def ver_imagenes():
     imagenes = Imagen.query.order_by(Imagen.date.desc()).all()
+    print(imagenes)  # Verifica si las imágenes se están recuperando correctamente
     return render_template("imagenes.html", imagenes=imagenes)
 
 # Configuración para correr la aplicación
