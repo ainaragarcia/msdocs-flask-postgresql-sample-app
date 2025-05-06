@@ -133,7 +133,7 @@ def api_upload():
         imagen = Imagen(
             username=data["username"],
             filename=data["filename"],
-            date=data["datetime"],
+            date=datetime.fromisoformat(data["date"]),
             rojo=data["colorStats"]["rojo"],
             verde=data["colorStats"]["verde"],
             azul=data["colorStats"]["azul"]
