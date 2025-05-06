@@ -13,7 +13,7 @@ db_name = os.getenv('AZURE_POSTGRESQL_NAME')
 db_user = os.getenv('AZURE_POSTGRESQL_USER')
 
 # Acceder a la contraseña desde Azure Key Vault (si es necesario)
-key_vault_url = os.getenv('AZURE_KEYVAULT_RESOURCEENDPOINT')
+key_vault_url = "https://AlmacenClavesPapAinara.vault.azure.net/"
 credential = DefaultAzureCredential()
 client = SecretClient(vault_url=key_vault_url, credential=credential)
 
