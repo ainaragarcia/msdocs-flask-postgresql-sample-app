@@ -1,74 +1,54 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for
-from datetime import datetime
-from werkzeug.utils import secure_filename
-from extensions import db, migrate  # Importa las extensiones de base de datos y migraciones
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
 
-# Configuración de la aplicación
+# Crear la aplicación Flask
 app = Flask(__name__)
 
-# Configuración de la base de datos y carpeta de uploads
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://usuario:contraseña@localhost:5432/tu_base_de_datos'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'static/uploads'  # Carpeta donde se guardarán las imágenes subidas
-app.config['ALLOWED_EXTENSIONS'] = {'jpg', 'jpeg', 'png', 'gif'}  # Extensiones permitidas para las imágenes
+# Configuración de la base de datos
+db_host = os.getenv('AZURE_POSTGRESQL_HOST')
+db_name = os.getenv('AZURE_POSTGRESQL_NAME')
+db_user = os.getenv('AZURE_POSTGRESQL_USER')
 
-# Inicialización de las extensiones
-db.init_app(app)
-migrate.init_app(app, db)
+# Acceder a la contraseña desde Azure Key Vault (si es necesario)
+key_vault_url = os.getenv('AZURE_KEYVAULT_RESOURCEENDPOINT')
+credential = DefaultAzureCredential()
+client = SecretClient(vault_url=key_vault_url, credential=credential)
 
-# Importa el modelo de la imagen
-from models import Imagen  # Asegúrate de que el archivo `models.py` contiene la clase Imagen
+# Obtener la contraseña del secreto almacenado en Azure Key Vault
+db_password = client.get_secret('AZURE_POSTGRESQL_PASSWORD').value
 
-# Función para verificar las extensiones permitidas
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+# Formar el URI de conexión a PostgreSQL
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{db_user}:{db_password}@{db_host}:5432/{db_name}'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Desactivar el seguimiento de modificaciones para mejorar el rendimiento
 
+# Crear la instancia de SQLAlchemy
+db = SQLAlchemy(app)
+
+# Definir un modelo de base de datos (ejemplo)
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+
+    def __repr__(self):
+        return f'<User {self.username}>'
+
+# Ruta principal
 @app.route('/')
 def index():
-    # Consulta todas las imágenes de la base de datos
-    imagenes = Imagen.query.all()
-    return render_template('Imagenes.html', imagenes=imagenes)
+    # Crear las tablas de la base de datos si no existen
+    db.create_all()
 
-@app.route('/upload', methods=['GET', 'POST'])
-def upload_image():
-    if request.method == 'POST':
-        # Verifica si la solicitud contiene el archivo
-        if 'file' not in request.files:
-            return 'No file part', 400
-        file = request.files['file']
+    # Agregar un usuario de ejemplo
+    new_user = User(username='john_doe', email='john@example.com')
+    db.session.add(new_user)
+    db.session.commit()
 
-        if file.filename == '':
-            return 'No selected file', 400
-        
-        if file and allowed_file(file.filename):
-            # Guardar el archivo en la carpeta de uploads
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(file_path)
+    return 'User added to database!'
 
-            # Obtén los datos JSON del formulario
-            username = request.form['username']
-            rojo = int(request.form['rojo'])
-            verde = int(request.form['verde'])
-            azul = int(request.form['azul'])
-            date = datetime.utcnow()
-
-            # Guardar la información en la base de datos
-            nueva_imagen = Imagen(
-                username=username,
-                filename=filename,
-                date=date,
-                rojo=rojo,
-                verde=verde,
-                azul=azul
-            )
-            db.session.add(nueva_imagen)
-            db.session.commit()
-
-            return redirect(url_for('index'))  # Redirige al index para ver la imagen subida
-
-    return render_template('upload.html')  # Si es GET, muestra el formulario de carga
-
-if __name__ == '__main__':
+# Ejecutar la aplicación
+if __name__ == "__main__":
     app.run(debug=True)
