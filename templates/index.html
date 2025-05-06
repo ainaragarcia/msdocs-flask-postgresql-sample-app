@@ -1,167 +1,28 @@
 <!DOCTYPE html>
-<html lang="es">
-<cabeza>
-<meta charset="UTF-8">
-<meta name="viewport" content="ancho=ancho-del-dispositivo, escala-inicial=1.0">
-<title>Imagenes Subidas</title>
-<estilo>
-cuerpo {
-familia de fuentes: Arial, sans-serif;
-color de fondo: #e0f7fa;
-color: #333;
-margen: 0;
-relleno: 20px;
-}
-h1 {
-alinear texto: centro;
-color: #0277bd;
-}
-mesa {
-ancho: 100%;
-colapso de frontera: colapso;
-margen superior: 20px;
-}
-mesa, th, td {
-borde: 1px sólido #0277bd;
-}
-el, td {
-relleno: 12px;
-alinear texto: izquierda;
-}
-el {
-color de fondo: #0277bd;
-color: blanco;
-}
-tr:nth-child(par) {
-color de fondo: #b3e5fc;
-}
-tr:hover {
-color de fondo: #81d4fa;
-}
-.filter-container {
-margen inferior: 20px;
-alinear texto: centro;
-}
-.filter-container entrada {
-relleno: 8px;
-margen derecho: 10px;
-borde: 1px sólido #0277bd;
-radio del borde: 4px;
-}
-Botón .filter-container {
-relleno: 8px 15px;
-color de fondo: #0277bd;
-color: blanco;
-borde: ninguno;
-radio del borde: 4px;
-cursor: puntero;
-}
-Botón .filter-container:hover {
-color de fondo: #01579b;
-}
-</estilo>
-</cabeza>
-<cuerpo>
-Imágenes subidas
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imagenes</title>
+</head>
+<body>
+    <h1>Imagenes Subidas</h1>
 
-<div class="contenedor-de-filtro">
-<label for="search-input">Buscar por nombre de archivo:</label>
-<input type="text" id="search-input" placeholder="Buscar archivo...">
-Filtrar
-</div>
-
-{% if imagenes %}
-<table id="tabla-de-imágenes">
-<cabeza>
-<tr>
-<th onclick="sortTable(0)">Usuario</th>
-<th onclick="sortTable(1)">Archivo</th>
-<th onclick="sortTable(2)">Fecha</th>
-Rojo
-<th onclick="sortTable(4)">Verde</th>
-Azul
-</tr>
-</cabeza>
-<cuerpo>
-{% for imagen in imagenes %}
-<tr>
-<td>{{ imagen.nombreusuario }}</td>
-<td>{{ imagen.nombre_archivo }}</td>
-<td>{{ imagen.date }}</td>
-<td>{{ imagen.rojo }}</td>
-<td>{{ imagen.verde }}</td>
-<td>{{ imagen.azul }}</td>
-</tr>
-{% endfor %}
-</tbody>
-</tabla>
-{% demás %}
-<p>No hay imágenes para mostrar.</p>
-{% endif %}
-
-<guión>
-// Función para ordenar la tabla
-función sortTable(n) {
-var tabla, filas, conmutación, i, x, y, shouldSwitch, dir, switchcount = 0;
-tabla = documento.getElementById("imagenes-tabla");
-conmutación = verdadero;
-directorio = "asc"; // Por defecto, orden ascendente
-
-mientras (cambiando) {
-conmutación = falso;
-filas = tabla.filas;
-
-para (i = 1; i < (filas.longitud - 1); i++) {
-shouldSwitch = falso;
-x = filas[i].getElementsByTagName("TD")[n];
-y = filas[i + 1].getElementsByTagName("TD")[n];
-
-si (dir == "asc") {
-si (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-shouldSwitch = verdadero;
-romper;
-}
-} de lo contrario si (dir === "desc") {
-si (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
-shouldSwitch = verdadero;
-romper;
-}
-}
-}
-si (deberíaCambiar) {
-filas[i].parentNode.insertBefore(filas[i + 1], filas[i]);
-conmutación = verdadero;
-conteo de interruptores++;
-} demás {
-si (conteo de cambios === 0 y dir === "asc") {
-dir = "desc";
-conmutación = verdadero;
-}
-}
-}
-}
-
-// Función para filtrar las imágenes por nombre de archivo
-función filterImages() {
-var entrada, filtro, tabla, tr, td, i, txtValue;
-entrada = document.getElementById("buscar-entrada");
-filtro = entrada.valor.toUpperCase();
-tabla = documento.getElementById("imagenes-tabla");
-tr = tabla.getElementsByTagName("tr");
-
-para (i = 1; i < longitud de tr.; i++) {
-td = tr[i].getElementsByTagName("td")[1]; // La columna de los nombres de archivo
-si (td) {
-txtValue = td.textContent || td.innerText;
-si (txtValue.toUpperCase().indexOf(filtro) > -1) {
-tr[i].style.display = "";
-} demás {
-tr[i].style.display = "ninguno";
-}
-}
-}
-}
-</script>
-
-</cuerpo>
+    {% if imagenes %}
+        <ul>
+        {% for imagen in imagenes %}
+            <li>
+                <strong>Usuario:</strong> {{ imagen.username }}<br>
+                <strong>Archivo:</strong> {{ imagen.filename }}<br>
+                <strong>Fecha:</strong> {{ imagen.date }}<br>
+                <strong>Rojo:</strong> {{ imagen.rojo }}<br>
+                <strong>Verde:</strong> {{ imagen.verde }}<br>
+                <strong>Azul:</strong> {{ imagen.azul }}<br>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No hay imágenes para mostrar.</p>
+    {% endif %}
+</body>
 </html>
