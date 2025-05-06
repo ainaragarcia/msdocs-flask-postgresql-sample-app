@@ -126,7 +126,7 @@ def upload_imagen():
 @app.route('/imagenes', methods=['GET'])
 def mostrar_imagenes():
     imagenes = Imagen.query.all()
-    return render_template('imagenes.html', imagenes=imagenes)
+    return render_template('index.html', imagenes=imagenes)
 
 if __name__ == '__main__':
     app.run()
