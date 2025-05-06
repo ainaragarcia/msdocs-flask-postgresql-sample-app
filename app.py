@@ -1,57 +1,57 @@
 import os
 from datetime import datetime
-from models import Imagen
-from flask import Flask, redirect, render_template, request, send_from_directory, url_for
-from extensions import db, migrate
+from flask import Flask, redirect, render_template, request, send_from_directory, url_for, jsonify
+from extensions import db, migrate  # Importa db y migrate desde extensions
 from flask_wtf.csrf import CSRFProtect
-from flask import jsonify 
 
-
+# Creación de la aplicación Flask
 app = Flask(__name__, static_folder='static')
 csrf = CSRFProtect(app)
 
-# WEBSITE_HOSTNAME exists only in production environment
+# Cargar configuración basada en el entorno
 if 'WEBSITE_HOSTNAME' not in os.environ:
-    # local development, where we'll use environment variables
+    # Desarrollo local
     print("Loading config.development and environment variables from .env file.")
     app.config.from_object('azureproject.development')
 else:
-    # production
+    # Producción
     print("Loading config.production.")
     app.config.from_object('azureproject.production')
 
+# Configuración de la base de datos
 app.config.update(
     SQLALCHEMY_DATABASE_URI=app.config.get('DATABASE_URI'),
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
 )
 
-# Initialize the database connection
-#db = SQLAlchemy(app)
+# Inicializar db con la app
 db.init_app(app)
 
-# Enable Flask-Migrate commands "flask db init/migrate/upgrade" to work
-#migrate = Migrate(app, db)
-
+# Inicializar las migraciones
 migrate.init_app(app, db)
 
-# The import must be done after db initialization due to circular import issue
-from models import Restaurant, Review
+# Importar los modelos después de la inicialización de db para evitar problemas de importación circular
+from models import Restaurant, Review, Imagen
 
+# Ruta de inicio
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')
 
+# Ruta para los detalles de un restaurante
 @app.route('/<int:id>', methods=['GET'])
 def details(id):
     restaurant = Restaurant.query.where(Restaurant.id == id).first()
     reviews = Review.query.where(Review.restaurant == id)
     return render_template('details.html', restaurant=restaurant, reviews=reviews)
 
+# Ruta para crear un restaurante
 @app.route('/create', methods=['GET'])
 def create_restaurant():
     print('Request for add restaurant page received')
     return render_template('create_restaurant.html')
 
+# Ruta para agregar un restaurante a la base de datos
 @app.route('/add', methods=['POST'])
 @csrf.exempt
 def add_restaurant():
@@ -60,7 +60,6 @@ def add_restaurant():
         street_address = request.values.get('street_address')
         description = request.values.get('description')
     except (KeyError):
-        # Redisplay the question voting form.
         return render_template('add_restaurant.html', {
             'error_message': "You must include a restaurant name, address, and description",
         })
@@ -71,9 +70,9 @@ def add_restaurant():
         restaurant.description = description
         db.session.add(restaurant)
         db.session.commit()
-
         return redirect(url_for('details', id=restaurant.id))
 
+# Ruta para agregar una reseña a un restaurante
 @app.route('/review/<int:id>', methods=['POST'])
 @csrf.exempt
 def add_review(id):
@@ -82,7 +81,6 @@ def add_review(id):
         rating = request.values.get('rating')
         review_text = request.values.get('review_text')
     except (KeyError):
-        #Redisplay the question voting form.
         return render_template('add_review.html', {
             'error_message': "Error adding review",
         })
@@ -95,9 +93,9 @@ def add_review(id):
         review.review_text = review_text
         db.session.add(review)
         db.session.commit()
-
     return redirect(url_for('details', id=id))
 
+# Contexto para calcular la calificación promedio de un restaurante
 @app.context_processor
 def utility_processor():
     def star_rating(id):
@@ -115,21 +113,23 @@ def utility_processor():
 
     return dict(star_rating=star_rating)
 
+# Ruta para el favicon
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
                                'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
-
-
-@app.route('/api/upload', methods=['POST'])  # Ruta para recibir datos desde Scala
+# Ruta para subir los datos de la imagen al Cloud
+@app.route('/api/upload', methods=['POST'])
 @csrf.exempt
 def api_upload():
     data = request.get_json()
+
     if not data:
         return jsonify({"error": "No se recibió ningún JSON"}), 400
 
     try:
+        # Crear un objeto Imagen basado en los datos recibidos
         imagen = Imagen(
             username=data["username"],
             filename=data["filename"],
@@ -143,17 +143,20 @@ def api_upload():
         return jsonify({"status": "ok", "mensaje": "Datos guardados correctamente"}), 200
     
     except Exception as e:
-        print("ERROR en api_upload:", repr(e))  # esto mostrará el error real en logs de Azure
+        print("ERROR en api_upload:", repr(e))  # Mostrar el error real en los logs de Azure
         return jsonify({"status": "error", "mensaje": "No se pudo guardar"}), 500
-    
+
+# Ruta para ver todas las imágenes subidas
 @app.route('/imagenes', methods=['GET'])
 def ver_imagenes():
     imagenes = Imagen.query.order_by(Imagen.date.desc()).all()
     return render_template("imagenes.html", imagenes=imagenes)
 
-
+# Configuración para correr la aplicación
 application = app
 
-if __name__ == '_main_':
+if __name__ == '__main__':  # Corregir el nombre de la condición para ejecutar la app
+    app.run(host='0.0.0.0', port=8081)  # Usa el puerto 8081, ya que Azure espera este puerto
 
-    app.run(host='0.0.0.0', port=5000)
+
+
