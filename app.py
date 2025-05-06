@@ -152,6 +152,9 @@ def ver_imagenes():
     imagenes = Imagen.query.order_by(Imagen.date.desc()).all()
     return render_template("imagenes.html", imagenes=imagenes)
 
+@app.route('/', methods=['GET'])
+def index():
+    return render_template('index.html')
 application = app
 
 if __name__ == '__main__':
