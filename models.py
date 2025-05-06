@@ -1,6 +1,8 @@
+# models.py
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import validates
 from datetime import datetime
+from extensions import db
 
 
 class Restaurant(db.Model):
@@ -12,7 +14,6 @@ class Restaurant(db.Model):
 
     def __str__(self):
         return self.name
-
 
 class Review(db.Model):
     __tablename__ = 'review'
@@ -30,7 +31,6 @@ class Review(db.Model):
 
     def __str__(self):
         return f"{self.user_name}: {self.review_date:%x}"
-
 
 class Imagen(db.Model):
     __tablename__ = 'imagenes'

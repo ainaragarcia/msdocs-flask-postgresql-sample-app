@@ -1,15 +1,20 @@
+# app.py
 import os
 from datetime import datetime
-from flask import Flask, redirect, render_template, request, send_from_directory, url_for, jsonify
+from flask import Flask, redirect, render_template, request, send_from_directory, url_for
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
-from models import Imagen, Restaurant, Review  # Importa todo de models al inicio
+from extensions import db, csrf
+from models import Imagen, Restaurant, Review
 
+# Crear app primero
 app = Flask(__name__, static_folder='static')
-csrf = CSRFProtect(app)
 
-# Configuración por entorno
+# Configurar CSRF antes de cargar config
+csrf.init_app(app)
+
+# Cargar configuración
 if 'WEBSITE_HOSTNAME' not in os.environ:
     print("Loading config.development and environment variables from .env file.")
     app.config.from_object('azureproject.development')
@@ -22,11 +27,11 @@ app.config.update(
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
 )
 
-# Inicializar DB y migraciones
-db = SQLAlchemy(app)
+# Inicializar extensiones después de configurar app
+db.init_app(app)
 migrate = Migrate(app, db)
 
-# Rutas principales
+# Rutas
 @app.route('/', methods=['GET'])
 def index():
     print('Request for index page received')
@@ -35,13 +40,12 @@ def index():
 
 @app.route('/<int:id>', methods=['GET'])
 def details(id):
-    restaurant = Restaurant.query.filter_by(id=id).first()
-    reviews = Review.query.filter_by(restaurant=id).all()
+    restaurant = Restaurant.query.where(Restaurant.id == id).first()
+    reviews = Review.query.where(Review.restaurant == id)
     return render_template('details.html', restaurant=restaurant, reviews=reviews)
 
 @app.route('/create', methods=['GET'])
 def create_restaurant():
-    print('Request for add restaurant page received')
     return render_template('create_restaurant.html')
 
 @app.route('/add', methods=['POST'])
@@ -70,34 +74,32 @@ def add_restaurant():
 def add_review(id):
     try:
         user_name = request.values.get('user_name')
-        rating = int(request.values.get('rating'))
+        rating = request.values.get('rating')
         review_text = request.values.get('review_text')
-    except (KeyError, ValueError):
+    except KeyError:
         return render_template('add_review.html', {
             'error_message': "Error adding review",
         })
     else:
         review = Review(
             restaurant=id,
+            review_date=datetime.now(),
             user_name=user_name,
-            rating=rating,
-            review_text=review_text,
-            review_date=datetime.now()
+            rating=int(rating),
+            review_text=review_text
         )
         db.session.add(review)
         db.session.commit()
-        return redirect(url_for('details', id=id))
+    return redirect(url_for('details', id=id))
 
 @app.context_processor
 def utility_processor():
     def star_rating(id):
-        reviews = Review.query.filter_by(restaurant=id).all()
+        reviews = Review.query.where(Review.restaurant == id)
         ratings = [r.rating for r in reviews]
-        review_count = len(ratings)
-        avg_rating = sum(ratings) / review_count if ratings else 0
-        stars_percent = round((avg_rating / 5.0) * 100) if review_count > 0 else 0
-        return {'avg_rating': avg_rating, 'review_count': review_count, 'stars_percent': stars_percent}
-
+        avg_rating = sum(ratings) / len(ratings) if ratings else 0
+        stars_percent = round((avg_rating / 5.0) * 100) if ratings else 0
+        return {'avg_rating': avg_rating, 'review_count': len(ratings), 'stars_percent': stars_percent}
     return dict(star_rating=star_rating)
 
 @app.route('/favicon.ico')
@@ -105,35 +107,26 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
                                'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
-# ---------------------------
-# Rutas para manejo de imágenes
-# ---------------------------
-
 @app.route('/api/upload', methods=['POST'])
 @csrf.exempt
 def upload_imagen():
     data = request.get_json()
-    try:
-        imagen = Imagen(
-            username=data['username'],
-            filename=data['filename'],
-            date=datetime.fromisoformat(data['date']),
-            rojo=data['colorStats']['rojo'],
-            verde=data['colorStats']['verde'],
-            azul=data['colorStats']['azul']
-        )
-        db.session.add(imagen)
-        db.session.commit()
-        return {"status": "ok"}, 200
-    except Exception as e:
-        return {"status": "error", "message": str(e)}, 400
+    imagen = Imagen(
+        username=data['username'],
+        filename=data['filename'],
+        date=data['date'],
+        rojo=data['colorStats']['rojo'],
+        verde=data['colorStats']['verde'],
+        azul=data['colorStats']['azul']
+    )
+    db.session.add(imagen)
+    db.session.commit()
+    return {"status": "ok"}, 200
 
 @app.route('/imagenes', methods=['GET'])
 def mostrar_imagenes():
     imagenes = Imagen.query.all()
     return render_template('imagenes.html', imagenes=imagenes)
-
-# ---------------------------
 
 if __name__ == '__main__':
     app.run()
