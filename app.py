@@ -134,7 +134,7 @@ def api_upload():
 
     return jsonify({"status": "ok", "mensaje": "Datos recibidos correctamente"}), 200  # Respuesta OK
 
-
+application = app
 
 if __name__ == '__main__':
     app.run()
