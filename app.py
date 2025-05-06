@@ -1,10 +1,11 @@
 import os
 from datetime import datetime
-
+from models import Imagen
 from flask import Flask, redirect, render_template, request, send_from_directory, url_for
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
+from flask import jsonify 
 
 
 app = Flask(__name__, static_folder='static')
@@ -119,20 +120,35 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
                                'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
+
+
 @app.route('/api/upload', methods=['POST'])  # Ruta para recibir datos desde Scala
-@csrf.exempt  # Permitir POST externo sin protección CSRF
+@csrf.exempt
 def api_upload():
-    from flask import jsonify
-
-    data = request.get_json()  # Leer JSON del cuerpo de la petición
-
+    data = request.get_json()
     if not data:
-        return jsonify({"error": "No se recibió ningún JSON"}), 400  # Validar contenido
+        return jsonify({"error": "No se recibió ningún JSON"}), 400
 
-    print("Datos recibidos desde Scala:")
-    print(data)  # Mostrar datos por consola (debug)
+    try:
+        imagen = Imagen(
+            username=data["username"],
+            filename=data["filename"],
+            date=data["date"],
+            rojo=data["colorStats"]["rojo"],
+            verde=data["colorStats"]["verde"],
+            azul=data["colorStats"]["azul"]
+        )
+        db.session.add(imagen)
+        db.session.commit()
+        return jsonify({"status": "ok", "mensaje": "Datos guardados correctamente"}), 200
+    except Exception as e:
+        print("ERROR:", e)
+        return jsonify({"status": "error", "mensaje": "No se pudo guardar"}), 500
 
-    return jsonify({"status": "ok", "mensaje": "Datos recibidos correctamente"}), 200  # Respuesta OK
+@app.route('/imagenes', methods=['GET'])
+def ver_imagenes():
+    imagenes = Imagen.query.order_by(Imagen.date.desc()).all()
+    return render_template("imagenes.html", imagenes=imagenes)
 
 application = app
 

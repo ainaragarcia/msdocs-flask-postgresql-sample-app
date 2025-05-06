@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Imágenes subidas desde Scala</title>
+</head>
+<body>
+    <h1>Visor de imágenes</h1>
+    <table border="1">
+        <tr>
+            <th>Usuario</th><th>Archivo</th><th>Fecha</th><th>Rojo</th><th>Verde</th><th>Azul</th>
+        </tr>
+        {% for img in imagenes %}
+        <tr>
+            <td>{{ img.username }}</td>
+            <td>{{ img.filename }}</td>
+            <td>{{ img.date }}</td>
+            <td>{{ img.rojo }}</td>
+            <td>{{ img.verde }}</td>
+            <td>{{ img.azul }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
