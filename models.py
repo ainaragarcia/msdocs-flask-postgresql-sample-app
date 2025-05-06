@@ -1,8 +1,7 @@
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import validates
 from datetime import datetime
-
-from app import db
+from extensions import db
 
 class Imagen(db.Model):
     __tablename__ = 'imagenes'

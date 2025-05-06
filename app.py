@@ -2,8 +2,7 @@ import os
 from datetime import datetime
 from models import Imagen
 from flask import Flask, redirect, render_template, request, send_from_directory, url_for
-from flask_migrate import Migrate
-from flask_sqlalchemy import SQLAlchemy
+from extensions import db, migrate
 from flask_wtf.csrf import CSRFProtect
 from flask import jsonify 
 
@@ -27,10 +26,13 @@ app.config.update(
 )
 
 # Initialize the database connection
-db = SQLAlchemy(app)
+#db = SQLAlchemy(app)
+db.init_app(app)
 
 # Enable Flask-Migrate commands "flask db init/migrate/upgrade" to work
-migrate = Migrate(app, db)
+#migrate = Migrate(app, db)
+
+migrate.init_app(app, db)
 
 # The import must be done after db initialization due to circular import issue
 from models import Restaurant, Review
