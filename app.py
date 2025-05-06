@@ -153,6 +153,30 @@ def ver_imagenes():
     print(imagenes)  # Verifica si las imágenes se están recuperando correctamente
     return render_template("imagenes.html", imagenes=imagenes)
 
+
+@app.route('/api/insert', methods=['POST'])
+@csrf.exempt
+def insert_data():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "JSON inválido"}), 400
+
+    try:
+        nuevo_valor = data.get('campo')
+        if not nuevo_valor:
+            return jsonify({"error": "Falta el campo 'campo'"}), 400
+
+        # Suponiendo que tienes un modelo llamado `MiTabla` con una columna `campo`
+        from models import imagenes  # Asegúrate de que el modelo existe
+        registro = imagenes(campo=nuevo_valor)
+        db.session.add(registro)
+        db.session.commit()
+
+        return jsonify({"status": "ok", "mensaje": "Insertado correctamente"}), 200
+    except Exception as e:
+        print("ERROR en insert_data:", repr(e))
+        return jsonify({"status": "error", "mensaje": "No se pudo insertar"}), 500
+    
 # Configuración para correr la aplicación
 application = app
 
