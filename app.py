@@ -141,10 +141,11 @@ def api_upload():
         db.session.add(imagen)
         db.session.commit()
         return jsonify({"status": "ok", "mensaje": "Datos guardados correctamente"}), 200
+    
     except Exception as e:
-        print("ERROR:", e)
+        print("ERROR en api_upload:", repr(e))  # esto mostrará el error real en logs de Azure
         return jsonify({"status": "error", "mensaje": "No se pudo guardar"}), 500
-
+    
 @app.route('/imagenes', methods=['GET'])
 def ver_imagenes():
     imagenes = Imagen.query.order_by(Imagen.date.desc()).all()
