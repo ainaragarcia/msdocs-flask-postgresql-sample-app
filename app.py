@@ -35,8 +35,9 @@ migrate = Migrate(app, db)
 @app.route('/', methods=['GET'])
 def index():
     print('Request for index page received')
-    restaurants = Restaurant.query.all()
-    return render_template('index.html', restaurants=restaurants)
+    # En esta ruta estamos mostrando las imágenes, no los restaurantes.
+    imagenes = Imagen.query.all()
+    return render_template('index.html', imagenes=imagenes)
 
 @app.route('/<int:id>', methods=['GET'])
 def details(id):
@@ -125,7 +126,9 @@ def upload_imagen():
 
 @app.route('/imagenes', methods=['GET'])
 def mostrar_imagenes():
+    # Obtener todas las imágenes de la base de datos
     imagenes = Imagen.query.all()
+    # Pasar las imágenes a la plantilla index.html
     return render_template('index.html', imagenes=imagenes)
 
 if __name__ == '__main__':
