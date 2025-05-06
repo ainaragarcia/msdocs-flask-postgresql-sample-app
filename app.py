@@ -39,9 +39,7 @@ from models import Restaurant, Review
 
 @app.route('/', methods=['GET'])
 def index():
-    print('Request for index page received')
-    restaurants = Restaurant.query.all()
-    return render_template('index.html', restaurants=restaurants)
+    return render_template('index.html')
 
 @app.route('/<int:id>', methods=['GET'])
 def details(id):
@@ -135,7 +133,7 @@ def api_upload():
         imagen = Imagen(
             username=data["username"],
             filename=data["filename"],
-            date=data["date"],
+            date=data["datetime"],
             rojo=data["colorStats"]["rojo"],
             verde=data["colorStats"]["verde"],
             azul=data["colorStats"]["azul"]
@@ -152,9 +150,7 @@ def ver_imagenes():
     imagenes = Imagen.query.order_by(Imagen.date.desc()).all()
     return render_template("imagenes.html", imagenes=imagenes)
 
-@app.route('/', methods=['GET'])
-def index():
-    return render_template('index.html')
+
 application = app
 
 if __name__ == '__main__':
