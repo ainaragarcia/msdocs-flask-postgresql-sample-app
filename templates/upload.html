@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir Imagen</title>
+</head>
+<body>
+    <h1>Subir Imagen</h1>
+
+    <form method="POST" enctype="multipart/form-data">
+        <label for="username">Nombre de Usuario:</label><br>
+        <input type="text" name="username" required><br>
+
+        <label for="file">Selecciona un archivo:</label><br>
+        <input type="file" name="file" required><br>
+
+        <label for="rojo">Rojo:</label><br>
+        <input type="number" name="rojo" required><br>
+
+        <label for="verde">Verde:</label><br>
+        <input type="number" name="verde" required><br>
+
+        <label for="azul">Azul:</label><br>
+        <input type="number" name="azul" required><br>
+
+        <button type="submit">Subir Imagen</button>
+    </form>
+
+</body>
+</html>

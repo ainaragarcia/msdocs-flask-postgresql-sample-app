@@ -1,68 +1,74 @@
-from flask import Flask, request, jsonify
-from datetime import datetime
 import os
+from flask import Flask, render_template, request, redirect, url_for
+from datetime import datetime
+from werkzeug.utils import secure_filename
+from extensions import db, migrate  # Importa las extensiones de base de datos y migraciones
 
+# Configuración de la aplicación
 app = Flask(__name__)
 
-# Ruta para mostrar un mensaje de bienvenida
+# Configuración de la base de datos y carpeta de uploads
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://usuario:contraseña@localhost:5432/tu_base_de_datos'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['UPLOAD_FOLDER'] = 'static/uploads'  # Carpeta donde se guardarán las imágenes subidas
+app.config['ALLOWED_EXTENSIONS'] = {'jpg', 'jpeg', 'png', 'gif'}  # Extensiones permitidas para las imágenes
+
+# Inicialización de las extensiones
+db.init_app(app)
+migrate.init_app(app, db)
+
+# Importa el modelo de la imagen
+from models import Imagen  # Asegúrate de que el archivo `models.py` contiene la clase Imagen
+
+# Función para verificar las extensiones permitidas
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
 @app.route('/')
 def index():
-    return "Bienvenido a la API de Carga de Archivos"
+    # Consulta todas las imágenes de la base de datos
+    imagenes = Imagen.query.all()
+    return render_template('Imagenes.html', imagenes=imagenes)
 
-# Ruta para manejar la carga de archivos y datos en formato JSON
-@app.route('/api/upload', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_image():
+    if request.method == 'POST':
+        # Verifica si la solicitud contiene el archivo
+        if 'file' not in request.files:
+            return 'No file part', 400
+        file = request.files['file']
 
-    if file:
-        # Guardar el archivo en el servidor local
-        file_path = os.path.join('uploads', file.filename)
-        file.save(file_path)
+        if file.filename == '':
+            return 'No selected file', 400
+        
+        if file and allowed_file(file.filename):
+            # Guardar el archivo en la carpeta de uploads
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
 
-        # Obtener datos JSON adicionales
-        data = request.get_json()
-        usuario = data.get('username', '')
-        nombre_archivo = data.get('filename', file.filename)
-        fecha = data.get('date', datetime.now().isoformat())
-        color_stats = data.get('colorStats', {})
+            # Obtén los datos JSON del formulario
+            username = request.form['username']
+            rojo = int(request.form['rojo'])
+            verde = int(request.form['verde'])
+            azul = int(request.form['azul'])
+            date = datetime.utcnow()
 
-        rojo = color_stats.get('rojo', 0)
-        verde = color_stats.get('verde', 0)
-        azul = color_stats.get('azul', 0)
+            # Guardar la información en la base de datos
+            nueva_imagen = Imagen(
+                username=username,
+                filename=filename,
+                date=date,
+                rojo=rojo,
+                verde=verde,
+                azul=azul
+            )
+            db.session.add(nueva_imagen)
+            db.session.commit()
 
-        # Simulamos el procesamiento del archivo (puedes agregar más lógica aquí)
-        resultado = procesar_archivo(file_path)
+            return redirect(url_for('index'))  # Redirige al index para ver la imagen subida
 
-        # Responder con un mensaje de éxito
-        return jsonify({
-            "mensaje": f"Archivo {nombre_archivo} subido exitosamente",
-            "usuario": usuario,
-            "fecha": fecha,
-            "colorStats": {
-                "rojo": rojo,
-                "verde": verde,
-                "azul": azul
-            },
-            "procesamiento": resultado
-        }), 200
-
-# Función que simula el procesamiento del archivo
-def procesar_archivo(ruta):
-    try:
-        with open(ruta, 'r', encoding='utf-8', errors='ignore') as f:
-            lineas = f.readlines()
-        return f"{len(lineas)} líneas encontradas"
-    except Exception as e:
-        return f"Error procesando el archivo: {str(e)}"
+    return render_template('upload.html')  # Si es GET, muestra el formulario de carga
 
 if __name__ == '__main__':
-    # Crear directorio de uploads si no existe
-    if not os.path.exists('uploads'):
-        os.makedirs('uploads')
-    
     app.run(debug=True)
