@@ -119,5 +119,22 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
                                'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
+@app.route('/api/upload', methods=['POST'])  # Ruta para recibir datos desde Scala
+@csrf.exempt  # Permitir POST externo sin protección CSRF
+def api_upload():
+    from flask import jsonify
+
+    data = request.get_json()  # Leer JSON del cuerpo de la petición
+
+    if not data:
+        return jsonify({"error": "No se recibió ningún JSON"}), 400  # Validar contenido
+
+    print("Datos recibidos desde Scala:")
+    print(data)  # Mostrar datos por consola (debug)
+
+    return jsonify({"status": "ok", "mensaje": "Datos recibidos correctamente"}), 200  # Respuesta OK
+
+
+
 if __name__ == '__main__':
     app.run()
