@@ -89,9 +89,9 @@
             <tbody>
                 {% for imagen in imagenes %}
                     <tr>
-                        <td>{{ imagen.nombreusuario }}</td>
-                        <td>{{ imagen.nombre_archivo }}</td>
-                        <td>{{ imagen.date }}</td>
+                        <td>{{ imagen.username }}</td>
+                        <td>{{ imagen.filename }}</td>
+                        <td>{{ imagen.date.strftime('%Y-%m-%d %H:%M') }}</td>
                         <td>{{ imagen.rojo }}</td>
                         <td>{{ imagen.verde }}</td>
                         <td>{{ imagen.azul }}</td>
@@ -109,7 +109,7 @@
             var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
             table = document.getElementById("imagenes-table");
             switching = true;
-            dir = "asc"; // Por defecto, orden ascendente
+            dir = "asc";
 
             while (switching) {
                 switching = false;
@@ -120,7 +120,7 @@
                     x = rows[i].getElementsByTagName("TD")[n];
                     y = rows[i + 1].getElementsByTagName("TD")[n];
 
-                    if (dir == "asc") {
+                    if (dir === "asc") {
                         if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
                             shouldSwitch = true;
                             break;
@@ -154,7 +154,7 @@
             tr = table.getElementsByTagName("tr");
 
             for (i = 1; i < tr.length; i++) {
-                td = tr[i].getElementsByTagName("td")[1]; // La columna de los nombres de archivo
+                td = tr[i].getElementsByTagName("td")[1];
                 if (td) {
                     txtValue = td.textContent || td.innerText;
                     if (txtValue.toUpperCase().indexOf(filter) > -1) {
@@ -169,3 +169,4 @@
 
 </body>
 </html>
+    
